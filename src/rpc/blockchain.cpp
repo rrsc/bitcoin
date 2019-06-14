@@ -6,7 +6,6 @@
 #include <rpc/blockchain.h>
 
 #include <amount.h>
-#include <base58.h>
 #include <blockfilter.h>
 #include <chain.h>
 #include <chainparams.h>
@@ -15,7 +14,6 @@
 #include <core_io.h>
 #include <hash.h>
 #include <index/blockfilterindex.h>
-#include <index/txindex.h>
 #include <key_io.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
@@ -1063,7 +1061,12 @@ static UniValue pruneblockchain(const JSONRPCRequest& request)
     }
 
     PruneBlockFilesManual(height);
-    return uint64_t(height);
+    const CBlockIndex* block = ::ChainActive().Tip();
+    assert(block);
+    while (block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA)) {
+        block = block->pprev;
+    }
+    return uint64_t(block->nHeight);
 }
 
 static UniValue gettxoutsetinfo(const JSONRPCRequest& request)
